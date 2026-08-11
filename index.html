@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="PLOポット計算 練習アプリ。TDA準拠・連続出題。" />
+  <title>PLO ポット計算 練習</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --card-border: #2a3548;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.12);
+      --error: #ef4444;
+      --error-bg: rgba(239, 68, 68, 0.12);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --input-bg: #0f172a;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 16px;
+      background-image:
+        radial-gradient(ellipse at top, #1e293b 0%, transparent 60%),
+        radial-gradient(ellipse at bottom right, #0f172a 0%, transparent 50%);
+    }
+    .container { max-width: 480px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 20px; padding-top: 4px; }
+    header h1 {
+      font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p { color: var(--text-muted); font-size: 0.8rem; margin-top: 2px; }
+    .stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted); }
+    .stats strong { color: var(--text); font-variant-numeric: tabular-nums; }
+    .card {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 14px; box-shadow: var(--shadow);
+    }
+    .street-badge {
+      display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 3px 8px; border-radius: 999px; margin-bottom: 10px;
+    }
+    .street-preflop { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .street-flop { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+    .street-turn { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .street-river { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .situation { font-size: 1.05rem; line-height: 1.65; margin-bottom: 4px; }
+    .situation .num { font-weight: 700; color: #93c5fd; font-variant-numeric: tabular-nums; }
+    .question { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--card-border); font-size: 0.95rem; color: var(--text-muted); }
+    .question strong { color: var(--text); }
+    .answer-area { margin-top: 8px; }
+    .answer-row { display: flex; gap: 10px; align-items: stretch; }
+    .answer-row input {
+      flex: 1; padding: 14px 16px; background: var(--input-bg); border: 1px solid var(--card-border);
+      border-radius: 10px; color: var(--text); font-size: 1.25rem; font-weight: 700; outline: none; font-variant-numeric: tabular-nums;
+    }
+    .answer-row input:focus { border-color: var(--accent); }
+    .btn { padding: 14px 20px; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #334155; color: var(--text); width: 100%; margin-top: 10px; }
+    .btn-secondary:hover { background: #475569; }
+    .feedback { margin-top: 14px; padding: 14px; border-radius: 10px; display: none; }
+    .feedback.show { display: block; }
+    .feedback.correct { background: var(--success-bg); border: 1px solid rgba(34, 197, 94, 0.4); }
+    .feedback.wrong { background: var(--error-bg); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .feedback-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+    .feedback.correct .feedback-title { color: var(--success); }
+    .feedback.wrong .feedback-title { color: var(--error); }
+    .feedback-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .feedback-body strong { color: var(--text); }
+    .tda-note { margin-top: 8px; font-size: 0.8rem; color: #64748b; border-top: 1px solid rgba(100, 116, 139, 0.3); padding-top: 8px; }
+    .hint-toggle { margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .hint { margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.25); border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); display: none; }
+    .hint.show { display: block; }
+    footer { text-align: center; margin-top: 20px; padding-bottom: 20px; font-size: 0.7rem; color: #64748b; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PLO ポット計算 練習</h1>
+      <p>TDA準拠・連続出題</p>
+    </header>
+    <div class="stats">
+      <span>正解 <strong id="correctCount">0</strong></span>
+      <span>出題 <strong id="totalCount">0</strong></span>
+      <span>連続 <strong id="streakCount">0</strong></span>
+    </div>
+    <div class="card" id="problemCard">
+      <div class="street-badge" id="streetBadge">PREFLOP</div>
+      <div class="situation" id="situationText"></div>
+      <div class="question" id="questionText"></div>
+      <div class="answer-area" id="answerArea">
+        <div class="answer-row">
+          <input type="number" id="answerInput" inputmode="decimal" placeholder="答えを入力" min="0" step="any" autocomplete="off" />
+          <button class="btn btn-primary" id="submitBtn">判定</button>
+        </div>
+        <div class="hint-toggle" id="hintToggle">ヒントを見る</div>
+        <div class="hint" id="hintBox"></div>
+      </div>
+      <div class="feedback" id="feedback">
+        <div class="feedback-title" id="feedbackTitle"></div>
+        <div class="feedback-body" id="feedbackBody"></div>
+      </div>
+      <button class="btn btn-secondary hidden" id="nextBtn">次の問題へ</button>
+    </div>
+    <footer>
+      最新TDAルール準拠（プリフロップは常にフルブラインド想定）<br>
+      完全クライアントサイド
+    </footer>
+  </div>
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      let correct = 0, total = 0, streak = 0, current = null, answered = false;
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function fmt(n) {
+        if (Number.isInteger(n)) return n.toLocaleString("ja-JP");
+        return (Math.round(n * 100) / 100).toLocaleString("ja-JP");
+      }
+
+      function genPreflopOpen() {
+        const blinds = pick([
+          { sb: 100, bb: 200 }, { sb: 200, bb: 400 }, { sb: 500, bb: 1000 },
+          { sb: 1000, bb: 2000 }, { sb: 1, bb: 2 }, { sb: 2, bb: 5 }, { sb: 5, bb: 10 }
+        ]);
+        const { sb, bb } = blinds;
+        const maxAdditional = sb + bb + bb;
+        const answer = bb + maxAdditional;
+        const variant = pick(["normal", "deadSB", "shortBB", "normal"]);
+        let extra = "";
+        if (variant === "deadSB") extra = `（SBはデッドで不在）`;
+        else if (variant === "shortBB") extra = `（BBはショートで${fmt(Math.floor(bb * 0.5))}しか出せていない）`;
+        return {
+          street: "preflop",
+          situation: `ブラインド <span class="num">${fmt(sb)}/${fmt(bb)}</span>${extra}<br>あなたはUTG。アクションはまだ誰もしていない。`,
+          question: `ポットサイズでオープンする場合、最大でいくらまでレイズできますか？（総額）`,
+          answer,
+          hint: `プリフロップはTDAにより常にフルブラインドで計算します。<br>最大追加レイズ = SB + BB + BB = ${fmt(sb)} + ${fmt(bb)} + ${fmt(bb)} = ${fmt(maxAdditional)}<br>総額 = コール${fmt(bb)} + 追加レイズ${fmt(maxAdditional)} = ${fmt(answer)}`,
+          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>計算：フルブラインド想定で<br>ポット（BB前）= ${fmt(sb)}、直前ベット = ${fmt(bb)}、コール額 = ${fmt(bb)}<br>最大追加レイズ = ${fmt(sb)} + ${fmt(bb)} + ${fmt(bb)} = ${fmt(maxAdditional)}<br>総投入額 = ${fmt(bb)}（コール） + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
+          tdaNote: variant !== "normal"
+            ? "TDA Rule 54-B：プリフロップではデッド／ショートブラインドがあっても、フルブラインドがポストされたものとして計算します。例：100-200でショートBBでも最大は700。"
+            : "TDAに従いフルブラインドで計算しています。"
+        };
+      }
+
+      function genPreflopFacingOpen() {
+        const blinds = pick([
+          { sb: 100, bb: 200 }, { sb: 200, bb: 400 }, { sb: 500, bb: 1000 },
+          { sb: 1, bb: 2 }, { sb: 2, bb: 5 }
+        ]);
+        const { sb, bb } = blinds;
+        const openMax = sb + 3 * bb;
+        const openTo = pick([openMax, Math.round(openMax * 0.8), Math.round(openMax * 0.9), openMax]);
+        const callers = pick([0, 0, 1, 1, 2]);
+        const potBeforeRaise = sb + bb + openTo * (1 + callers);
+        const potBeforeBet = potBeforeRaise - openTo;
+        const maxAdditional = potBeforeBet + openTo + openTo;
+        const answer = openTo + maxAdditional;
+        let callerText = "";
+        if (callers === 1) callerText = "1人がコール。";
+        else if (callers === 2) callerText = "2人がコール。";
+        return {
+          street: "preflop",
+          situation: `ブラインド <span class="num">${fmt(sb)}/${fmt(bb)}</span><br>UTGが <span class="num">${fmt(openTo)}</span> にオープン。${callerText}<br>あなたはポジションあり。`,
+          question: `ポットサイズで3ベットする場合、最大でいくらまでレイズできますか？（総額）`,
+          answer,
+          hint: `現在のポット（あなたのアクション前）≈ ${fmt(potBeforeRaise)}<br>コール額 = ${fmt(openTo)}<br>最大追加レイズ = （ポット − 直前ベット） + 直前ベット + コール額`,
+          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>現在のポット（アクション前）= ${fmt(potBeforeRaise)}<br>直前ベット（to call）= ${fmt(openTo)}<br>直前ベット前のポット = ${fmt(potBeforeBet)}<br>最大追加レイズ = ${fmt(potBeforeBet)} + ${fmt(openTo)} + ${fmt(openTo)} = ${fmt(maxAdditional)}<br>総投入額 = ${fmt(openTo)} + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
+          tdaNote: "プリフロップもフルブラインド想定で計算しています。"
+        };
+      }
+
+      function genPostflopFirst() {
+        const pot = pick([40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000]);
+        return {
+          street: pick(["flop", "turn", "river"]),
+          situation: `現在のポットは <span class="num">${fmt(pot)}</span>。<br>あなたが先にアクションする（前にベットはない）。`,
+          question: `ポットサイズでベットする場合、最大でいくらまでベットできますか？`,
+          answer: pot,
+          hint: `先手の最大ベット = 現在のポットそのもの`,
+          explanation: `最大ベット額 = <strong>${fmt(pot)}</strong><br><br>先手の場合、最大ベットは現在のポットサイズです。`,
+          tdaNote: "ポストフロップは実際のポットサイズに基づきます（TDA Rule 54-C）。"
+        };
+      }
+
+      function genPostflopFacing() {
+        const potBefore = pick([30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000]);
+        const fractions = [0.33, 0.5, 0.66, 0.75, 1.0, 1.0];
+        let bet = Math.round(potBefore * pick(fractions));
+        if (bet < 1) bet = 1;
+        if (bet >= 10) bet = Math.round(bet / 5) * 5;
+        if (bet >= 50) bet = Math.round(bet / 10) * 10;
+        const street = pick(["flop", "turn", "river"]);
+        const callers = pick([0, 0, 0, 1]);
+        let callerText = callers === 1 ? "その後1人がコール。" : "";
+        const potWhenYouAct = potBefore + bet + (callers * bet);
+        const maxAdditional = potWhenYouAct + bet;
+        const answer = bet + maxAdditional;
+        return {
+          street,
+          situation: `現在のポット（相手のベット前）は <span class="num">${fmt(potBefore)}</span>。<br>相手が <span class="num">${fmt(bet)}</span> をベット。${callerText}`,
+          question: `ポットサイズでレイズする場合、最大でいくらまでレイズできますか？（総額）`,
+          answer,
+          hint: callers > 0
+            ? `あなたの番でのポット = ${fmt(potBefore)} + ${fmt(bet)}（ベット） + ${fmt(bet)}（コール） = ${fmt(potWhenYouAct)}<br>最大追加レイズ = そのポット + 自分のコール額 = ${fmt(potWhenYouAct)} + ${fmt(bet)}`
+            : `最大追加レイズ = ポット（ベット前） + ベット + コール額<br>= ${fmt(potBefore)} + ${fmt(bet)} + ${fmt(bet)}`,
+          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>` +
+            (callers > 0
+              ? `あなたの番でのポット = ${fmt(potBefore)} + ${fmt(bet)} + ${fmt(bet)}（コール） = ${fmt(potWhenYouAct)}<br>あなたがコールするとポットは ${fmt(potWhenYouAct + bet)} になる<br>最大追加レイズ = ${fmt(maxAdditional)}<br>総投入額 = コール ${fmt(bet)} + 追加レイズ ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`
+              : `最大追加レイズ = ${fmt(potBefore)} + ${fmt(bet)} + ${fmt(bet)} = ${fmt(maxAdditional)}<br>総投入額 = コール ${fmt(bet)} + 追加レイズ ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong><br><br>ショートカット：直前ベット×3 + ベット前ポット = ${fmt(bet)}×3 + ${fmt(potBefore)} = ${fmt(3 * bet + potBefore)}`),
+          tdaNote: "ポストフロップは実際のポットサイズに基づきます（TDA Rule 54-C）。コールが入っている場合はその分もポットに含めます。"
+        };
+      }
+
+      function genProblem() {
+        const type = pick(["preOpen","preOpen","preOpen","preFacing","preFacing","postFirst","postFirst","postFacing","postFacing","postFacing","postFacing"]);
+        if (type === "preOpen") return genPreflopOpen();
+        if (type === "preFacing") return genPreflopFacingOpen();
+        if (type === "postFirst") return genPostflopFirst();
+        return genPostflopFacing();
+      }
+
+      function updateStats() {
+        $("correctCount").textContent = correct;
+        $("totalCount").textContent = total;
+        $("streakCount").textContent = streak;
+      }
+
+      function showProblem() {
+        current = genProblem();
+        answered = false;
+        const badge = $("streetBadge");
+        badge.textContent = current.street.toUpperCase();
+        badge.className = "street-badge street-" + current.street;
+        $("situationText").innerHTML = current.situation;
+        $("questionText").innerHTML = `<strong>問：</strong> ${current.question}`;
+        $("answerInput").value = "";
+        $("answerInput").disabled = false;
+        $("submitBtn").disabled = false;
+        $("answerArea").classList.remove("hidden");
+        $("feedback").classList.remove("show", "correct", "wrong");
+        $("nextBtn").classList.add("hidden");
+        $("hintBox").classList.remove("show");
+        $("hintBox").innerHTML = current.hint;
+        $("hintToggle").textContent = "ヒントを見る";
+        $("hintToggle").classList.remove("hidden");
+        $("answerInput").focus();
+      }
+
+      function checkAnswer() {
+        if (answered || !current) return;
+        const raw = $("answerInput").value.trim();
+        if (raw === "") { $("answerInput").focus(); return; }
+        const userAns = parseFloat(raw);
+        if (isNaN(userAns)) { $("answerInput").focus(); return; }
+        answered = true;
+        total++;
+        const isCorrect = Math.abs(userAns - current.answer) < 0.01;
+        if (isCorrect) { correct++; streak++; } else { streak = 0; }
+        updateStats();
+        const fb = $("feedback");
+        fb.classList.add("show");
+        fb.classList.toggle("correct", isCorrect);
+        fb.classList.toggle("wrong", !isCorrect);
+        $("feedbackTitle").textContent = isCorrect ? "正解！" : "不正解";
+        let body = "";
+        if (!isCorrect) body += `あなたの答え：${fmt(userAns)}　正しい答え：<strong>${fmt(current.answer)}</strong><br><br>`;
+        body += current.explanation;
+        if (current.tdaNote) body += `<div class="tda-note">${current.tdaNote}</div>`;
+        $("feedbackBody").innerHTML = body;
+        $("answerInput").disabled = true;
+        $("submitBtn").disabled = true;
+        $("hintToggle").classList.add("hidden");
+        $("hintBox").classList.remove("show");
+        $("nextBtn").classList.remove("hidden");
+        $("nextBtn").focus();
+      }
+
+      $("submitBtn").addEventListener("click", checkAnswer);
+      $("answerInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (!answered) checkAnswer();
+          else showProblem();
+        }
+      });
+      $("nextBtn").addEventListener("click", showProblem);
+      $("hintToggle").addEventListener("click", () => {
+        const box = $("hintBox");
+        const show = !box.classList.contains("show");
+        box.classList.toggle("show", show);
+        $("hintToggle").textContent = show ? "ヒントを隠す" : "ヒントを見る";
+      });
+      updateStats();
+      showProblem();
+    })();
+  </script>
+</body>
+</html>
