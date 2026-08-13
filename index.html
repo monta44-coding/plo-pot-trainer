@@ -234,14 +234,16 @@
         return {
           key: `preOpen-${sb}-${bb}-${variant}`, street: "preflop", answer, blindsLabel: `${fmt(sb)} / ${fmt(bb)}`,
           visualRows: [
-            { short: "SB", name: "スモールブラインド", detail: variant === "deadSB" ? "デッド（計算はフル）" : "ポスト", amount: variant === "deadSB" ? 0 : sb },
-            { short: "BB", name: "ビッグブラインド", detail: variant === "shortBB" ? "ショート（計算はフル）" : "ポスト", amount: variant === "shortBB" ? Math.floor(bb * 0.5) : bb },
+            { short: "SB", name: "スモールブラインド", detail: variant === "deadSB" ? "デッド" : "ポスト", amount: variant === "deadSB" ? 0 : sb },
+            { short: "BB", name: "ビッグブラインド", detail: variant === "shortBB" ? "ショート" : "ポスト", amount: variant === "shortBB" ? Math.floor(bb * 0.5) : bb },
             { short: "You", name: "あなた (UTG)", detail: "ポットサイズでオープン", you: true }
           ],
           question: `ポットサイズでオープンする場合、最大でいくらまでレイズできますか？（総額）`,
-          hint: `フルブラインド想定。<br>最大追加レイズ = SB+BB+BB = ${fmt(maxAdditional)}<br>総額 = コール${fmt(bb)} + ${fmt(maxAdditional)} = ${fmt(answer)}`,
-          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>フルブラインド想定：ポット(BB前)=${fmt(sb)}、直前ベット=${fmt(bb)}、コール=${fmt(bb)}<br>最大追加レイズ = ${fmt(sb)}+${fmt(bb)}+${fmt(bb)} = ${fmt(maxAdditional)}<br>総投入額 = ${fmt(bb)} + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
-          tdaNote: variant !== "normal" ? "TDA Rule 54-B：プリフロップはデッド／ショートでもフルブラインドで計算。例：100-200でショートBBでも最大700。" : "TDAに従いフルブラインドで計算。"
+          hint: variant !== "normal"
+            ? `ヒント：プリフロップはデッドやショートがあっても、フルブラインドがポストされたものとして計算します（TDA）。<br>最大追加 = SB+BB+BB = ${fmt(maxAdditional)} → 総額 ${fmt(answer)}`
+            : `最大追加レイズ = SB+BB+BB = ${fmt(maxAdditional)}<br>総額 = コール${fmt(bb)} + ${fmt(maxAdditional)} = ${fmt(answer)}`,
+          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>ポット(BB前)=${fmt(sb)}、直前ベット=${fmt(bb)}、コール=${fmt(bb)}<br>最大追加レイズ = ${fmt(sb)}+${fmt(bb)}+${fmt(bb)} = ${fmt(maxAdditional)}<br>総投入額 = ${fmt(bb)} + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
+          tdaNote: variant !== "normal" ? "TDA Rule 54-B：プリフロップではデッド／ショートブラインドがあってもフルブラインド想定で計算します。" : ""
         };
       }
 
@@ -268,7 +270,7 @@
           question: `ポットサイズで3ベットする場合、最大でいくらまでレイズできますか？（総額）`,
           hint: `現在ポット ≈ ${fmt(potBeforeRaise)} / コール額 ${fmt(openTo)}`,
           explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>現在ポット = ${fmt(potBeforeRaise)}、to call = ${fmt(openTo)}<br>直前ベット前ポット = ${fmt(potBeforeBet)}<br>最大追加レイズ = ${fmt(potBeforeBet)}+${fmt(openTo)}+${fmt(openTo)} = ${fmt(maxAdditional)}<br>総投入額 = ${fmt(openTo)}+${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
-          tdaNote: "プリフロップもフルブラインド想定。"
+          tdaNote: ""
         };
       }
 
@@ -323,30 +325,31 @@
       }
 
       function genRepot() {
+        // リポット = 相手がフルポットベットした状況のみ
         const potBefore = pick([50, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000]);
         let bet = potBefore;
-        if (difficulty !== "easy") bet = pick([potBefore, Math.round(potBefore * 0.9), Math.round(potBefore * 0.75)]);
         if (bet >= 10) bet = Math.round(bet / 5) * 5;
+        const centerPot = bet;
         const street = pick(["flop", "turn", "river"]);
         const callers = difficulty === "hard" ? pick([0, 0, 1]) : 0;
-        const potWhenYouAct = potBefore + bet + callers * bet;
+        const potWhenYouAct = centerPot + bet + callers * bet;
         const maxAdditional = potWhenYouAct + bet;
         const answer = bet + maxAdditional;
-        const rows = [{ short: "V", name: "相手", detail: bet >= potBefore * 0.95 ? "ポットベット" : "大きめのベット", amount: bet }];
+        const rows = [{ short: "V", name: "相手", detail: "ポットベット", amount: bet }];
         if (callers >= 1) rows.push({ short: "C1", name: "コーラー", detail: "コール", amount: bet, caller: true });
-        rows.push({ short: "You", name: "あなた", detail: "リポット（ポットサイズレイズ）", you: true });
+        rows.push({ short: "You", name: "あなた", detail: "リポット", you: true });
         let bl3;
-        if (potBefore <= 30) bl3 = "1 / 2";
-        else if (potBefore <= 100) bl3 = "2 / 5";
-        else if (potBefore <= 300) bl3 = "5 / 10";
-        else if (potBefore <= 800) bl3 = "10 / 25";
+        if (centerPot <= 30) bl3 = "1 / 2";
+        else if (centerPot <= 100) bl3 = "2 / 5";
+        else if (centerPot <= 300) bl3 = "5 / 10";
+        else if (centerPot <= 800) bl3 = "10 / 25";
         else bl3 = "25 / 50";
         return {
-          key: `repot-${street}-${potBefore}-${bet}-${callers}`, street, answer, potDisplay: potBefore, blindsLabel: bl3, visualRows: rows,
+          key: `repot-${street}-${centerPot}-${bet}-${callers}`, street, answer, potDisplay: centerPot, blindsLabel: bl3, visualRows: rows,
           question: `リポットする場合、最大でいくらまでレイズできますか？（総額）`,
-          hint: `中央ポット ${fmt(potBefore)} ＋ 場のベット/コールで計算 → 総額 ${fmt(answer)}`,
-          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>中央のポット = ${fmt(potBefore)}、相手ベット ${fmt(bet)}` + (callers ? `、コール ${callers}人` : "") + `<br>あなたの番の合計 = ${fmt(potWhenYouAct)}<br>コール後 = ${fmt(potWhenYouAct + bet)} → 最大追加 ${fmt(maxAdditional)}<br>総投入額 = ${fmt(bet)} + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
-          tdaNote: "中央表示は前ストリートまでのポットのみ。"
+          hint: `相手がフルポット（${fmt(bet)}）を打った。<br>中央 ${fmt(centerPot)} ＋ ベット/コール後のあなたの番で計算 → 総額 ${fmt(answer)}`,
+          explanation: `最大総額 = <strong>${fmt(answer)}</strong><br><br>中央のポット = ${fmt(centerPot)}、相手のポットベット = ${fmt(bet)}` + (callers ? `、コール ${callers}人` : "") + `<br>あなたの番の合計 = ${fmt(potWhenYouAct)}<br>コール後 = ${fmt(potWhenYouAct + bet)} → 最大追加 ${fmt(maxAdditional)}<br>総投入額 = ${fmt(bet)} + ${fmt(maxAdditional)} = <strong>${fmt(answer)}</strong>`,
+          tdaNote: "リポットは相手がポットサイズでベットした場合のポットサイズレイズ。"
         };
       }
 
